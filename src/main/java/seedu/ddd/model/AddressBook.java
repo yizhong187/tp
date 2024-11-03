@@ -111,14 +111,6 @@ public class AddressBook implements ReadOnlyAddressBook {
     }
 
     /**
-     * Returns true if an event with the same name as {@code event} exists in the address book.
-     */
-    public boolean hasEventName(Name eventName) {
-        requireNonNull(eventName);
-        return events.containsName(eventName);
-    }
-
-    /**
      * Fetches a contact from the address book.
      * If contact has not been created or does not exist, a null object will be returned.
      */

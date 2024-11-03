@@ -207,17 +207,12 @@ public class Event implements Displayable {
     /**
      * Return if the two events are the same.
      *
-     * Two events are considered the same if they have the same client and date.
+     * Two events are considered the same if they have the same name.
      * @param otherEvent Another event.
      * @return A boolean value which represents the result.
      */
     public boolean isSameEvent(Event otherEvent) {
-        Set<Client> thisClients = new HashSet<>(this.getClients());
-        Set<Client> otherClients = new HashSet<>(otherEvent.getClients());
-        Description thisDescription = this.getDescription();
-        Description otherDescription = otherEvent.getDescription();
-        return thisClients.equals(otherClients)
-                && thisDescription.equals(otherDescription);
+        return this.getName().equals(otherEvent.getName());
     }
 
     @Override
@@ -233,16 +228,7 @@ public class Event implements Displayable {
 
         Event otherEvent = (Event) other;
 
-        Set<Client> thisClients = new HashSet<>(this.getClients());
-        Set<Vendor> thisVendors = new HashSet<>(this.getVendors());
-        Description thisDescription = this.getDescription();
-        Set<Client> otherClients = new HashSet<>(otherEvent.getClients());
-        Set<Vendor> otherVendors = new HashSet<>(otherEvent.getVendors());
-        Description otherDescription = otherEvent.getDescription();
-
-        return thisClients.equals(otherClients)
-                && thisVendors.equals(otherVendors)
-                && thisDescription.equals(otherDescription);
+        return this.getName().equals(otherEvent.getName());
     }
 
     @Override

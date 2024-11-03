@@ -43,14 +43,6 @@ public class UniqueEventList implements Iterable<Event> {
     }
 
     /**
-     * Returns true if the list contains an event with the equivalent name as the given argument.
-     */
-    public boolean containsName(Name toCheck) {
-        requireNonNull(toCheck);
-        return internalList.stream().anyMatch(event -> event.getName().equals(toCheck));
-    }
-
-    /**
      * Adds an event to the list.
      * The event must not already exist in the list.
      */
