@@ -70,6 +70,19 @@ public class ContactPredicateBuilderTest {
         assertFalse(predicateBuilder.build().test(new ClientBuilder().withName("Harry Potter").build()));
         assertFalse(predicateBuilder.build().test(new ClientBuilder().withName("benSOn Nguyen").build()));
     }
+    @Test
+    public void testArgumentMultimap_doesNotContainValidName_throwsParseException() throws ParseException {
+        ArgumentMultimap argMultimap = new ArgumentMultimap();
+        argMultimap.put(PREFIX_NAME, "");
+        ContactPredicateBuilder predicateBuilder = new ContactPredicateBuilder(argMultimap);
+
+        assertThrows(ParseException.class, predicateBuilder::build);
+
+        argMultimap.put(PREFIX_NAME, "Name with s/o to repesent service tag");
+        predicateBuilder = new ContactPredicateBuilder(argMultimap);
+
+        assertThrows(ParseException.class, predicateBuilder::build);
+    }
 
     @Test
     public void testArgumentMultimap_containsPhone_returnsTrue() throws ParseException {
@@ -91,6 +104,15 @@ public class ContactPredicateBuilderTest {
         assertFalse(predicateBuilder.build().test(new ClientBuilder().withPhone("81234567").build()));
         assertFalse(predicateBuilder.build().test(new ClientBuilder().withPhone("10931234").build()));
         assertFalse(predicateBuilder.build().test(new ClientBuilder().withPhone("90120312").build()));
+    }
+
+    @Test
+    public void testArgumentMultimap_doesNotContainValidPhone_throwsParseException() throws ParseException {
+        ArgumentMultimap argMultimap = new ArgumentMultimap();
+        argMultimap.put(PREFIX_PHONE, "12");
+        ContactPredicateBuilder predicateBuilder = new ContactPredicateBuilder(argMultimap);
+
+        assertThrows(ParseException.class, predicateBuilder::build);
     }
 
     @Test
@@ -116,6 +138,15 @@ public class ContactPredicateBuilderTest {
     }
 
     @Test
+    public void testArgumentMultimap_doesNotContainValidAddress_throwsParseException() throws ParseException {
+        ArgumentMultimap argMultimap = new ArgumentMultimap();
+        argMultimap.put(PREFIX_ADDRESS, "Main /Street");
+        ContactPredicateBuilder predicateBuilder = new ContactPredicateBuilder(argMultimap);
+
+        assertThrows(ParseException.class, predicateBuilder::build);
+    }
+
+    @Test
     public void testArgumentMultimap_containsId_returnsTrue() throws ParseException {
         ArgumentMultimap argMultimap = new ArgumentMultimap();
         argMultimap.put(PREFIX_ID, "1");
@@ -137,6 +168,17 @@ public class ContactPredicateBuilderTest {
 
         argMultimap.put(PREFIX_ID, "1");
         assertFalse(predicateBuilder.build().test(new ClientBuilder().withId(2).build()));
+    }
+    @Test
+    public void testArgumentMultimap_doesNotContainValidId_throwsParseException() throws ParseException {
+        ArgumentMultimap argMultimap = new ArgumentMultimap();
+        argMultimap.put(PREFIX_ID, "two");
+        ContactPredicateBuilder predicateBuilder = new ContactPredicateBuilder(argMultimap);
+
+        assertThrows(ParseException.class, predicateBuilder::build);
+
+        argMultimap.put(PREFIX_ID, "one");
+        assertThrows(ParseException.class, predicateBuilder::build);
     }
 
     @Test
@@ -186,6 +228,18 @@ public class ContactPredicateBuilderTest {
 
         argMultimap.put(PREFIX_EMAIL, "johnd@example.com");
         assertFalse(predicateBuilder.build().test(ALICE));
+    }
+
+    @Test
+    public void testArgumentMultimap_doesNotContainValidEmail_throwsParseException() throws ParseException {
+        ArgumentMultimap argMultimap = new ArgumentMultimap();
+        argMultimap.put(PREFIX_EMAIL, "a");
+        ContactPredicateBuilder predicateBuilder = new ContactPredicateBuilder(argMultimap);
+
+        assertThrows(ParseException.class, predicateBuilder::build);
+
+        argMultimap.put(PREFIX_EMAIL, "a@");
+        assertThrows(ParseException.class, predicateBuilder::build);
     }
 
 

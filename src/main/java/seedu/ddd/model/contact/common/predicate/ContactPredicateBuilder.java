@@ -17,7 +17,9 @@ import seedu.ddd.logic.parser.ArgumentMultimap;
 import seedu.ddd.logic.parser.ParserUtil;
 import seedu.ddd.logic.parser.exceptions.ParseException;
 import seedu.ddd.model.common.Id;
+import seedu.ddd.model.common.Name;
 import seedu.ddd.model.common.Tag;
+import seedu.ddd.model.contact.common.Address;
 import seedu.ddd.model.contact.common.Contact;
 import seedu.ddd.model.contact.common.Email;
 import seedu.ddd.model.contact.common.Phone;
@@ -60,6 +62,9 @@ public class ContactPredicateBuilder {
             throws ParseException {
         if (argMultimap.getValue(PREFIX_ADDRESS).isPresent()) {
             String args = verifyNoEmptyInput(argMultimap, PREFIX_ADDRESS);
+            // Verify whether input is a valid address
+            Address address = ParserUtil.parseAddress(args);
+
             String[] addressKeywords = args.split("\\s+");
             return combinedPredicate.and(new AddressContainsKeywordsPredicate(Arrays.asList(addressKeywords)));
         }
@@ -70,7 +75,7 @@ public class ContactPredicateBuilder {
             throws ParseException {
         if (argMultimap.getValue(PREFIX_EMAIL).isPresent()) {
             String args = verifyNoEmptyInput(argMultimap, PREFIX_EMAIL);
-            Email email = new Email(args);
+            Email email = ParserUtil.parseEmail(args);
             combinedPredicate = combinedPredicate.and(new ContactEmailPredicate(email));
         }
         return combinedPredicate;
@@ -80,7 +85,7 @@ public class ContactPredicateBuilder {
             throws ParseException {
         if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
             String args = verifyNoEmptyInput(argMultimap, PREFIX_PHONE);
-            Phone phoneNumber = new Phone(args);
+            Phone phoneNumber = ParserUtil.parsePhone(args);
             combinedPredicate = combinedPredicate.and(new ContactPhonePredicate(phoneNumber));
         }
         return combinedPredicate;
@@ -90,7 +95,7 @@ public class ContactPredicateBuilder {
             throws ParseException {
         if (argMultimap.getValue(PREFIX_ID).isPresent()) {
             String args = verifyNoEmptyInput(argMultimap, PREFIX_ID);
-            Id contactId = new Id(Integer.parseInt(args));
+            Id contactId = ParserUtil.parseId(args);
             combinedPredicate = combinedPredicate.and(new ContactIdPredicate(contactId));
         }
         return combinedPredicate;
@@ -109,6 +114,8 @@ public class ContactPredicateBuilder {
             throws ParseException {
         if (argMultimap.getValue(PREFIX_NAME).isPresent()) {
             String args = verifyNoEmptyInput(argMultimap, PREFIX_NAME);
+            // Verify whether input is a valid name
+            Name name = ParserUtil.parseName(args);
             String[] nameKeywords = args.split("\\s+");
             combinedPredicate = combinedPredicate.and(new NameContainsKeywordsPredicate(Arrays.asList(nameKeywords)));
         }

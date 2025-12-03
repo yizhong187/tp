@@ -125,7 +125,7 @@ How the `AddressBookParser` works:
 * The newly created parser parses the user command and creates a `XYZCommand` object (e.g `DeleteCommand`) which the `AddressBookParser` returns back as a `Command` object.
 * All `XYZCommandParser` classes (e.g. `DeleteCommandParser`) inherit from the `Parser` interface so that they can be treated similarly where possible e.g, during testing.
 
-### Model component
+### Model Component
 **API** : [`Model.java`](https://github.com/AY2425S1-CS2103T-F13-3/tp/blob/master/src/main/java/seedu/address/model/Model.java)
 
 <puml src="diagrams/ModelClassDiagram.puml" width="450" />
@@ -152,7 +152,7 @@ Represents a contact within the address book. `Contact` can be either:
 
 Represents a wedding event.
 
-### Storage component
+### Storage Component
 
 **API** : [`Storage.java`](https://github.com/AY2425S1-CS2103T-F13-3/tp/blob/master/src/main/java/seedu/address/storage/Storage.java)
 
@@ -164,7 +164,7 @@ The `Storage` component:
 * Inherits from both `DreamDayDesignerStorage` and `UserPrefStorage`, which means it can be treated as either one (if only the functionality of only one is needed).
 * Depends on `Model` since the data model of `Contact` and `Event` are defined within `Model`.
 
-### Common classes
+### Common Classes
 
 Classes used by multiple components are in the `seedu.ddd.commons` package.
 
@@ -174,109 +174,12 @@ Classes used by multiple components are in the `seedu.ddd.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-<!-- ### \[Proposed\] Undo/redo feature
-
-#### Proposed Implementation
-
-The proposed undo/redo mechanism is facilitated by `VersionedDreamDayDesigner`. It extends `DreamDayDesigner` with an undo/redo history, stored internally as an `dreamDayDesignerStateList` and `currentStatePointer`. Additionally, it implements the following operations:
-
-* `VersionedDreamDayDesigner#commit()` — Saves the current address book state in its history.
-* `VersionedDreamDayDesigner#undo()` — Restores the previous address book state from its history.
-* `VersionedDreamDayDesigner#redo()` — Restores a previously undone address book state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitDreamDayDesigner()`, `Model#undoDreamDayDesigner()` and `Model#redoDreamDayDesigner()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedDreamDayDesigner` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitDreamDayDesigner()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `dreamDayDesignerStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitDreamDayDesigner()`, causing another modified address book state to be saved into the `dreamDayDesignerStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitDreamDayDesigner()`, so the address book state will not be saved into the `dreamDayDesignerStateList`.
-
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoDreamDayDesigner()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial DreamDayDesigner state, then there are no previous DreamDayDesigner states to restore. The `undo` command uses `Model#canUndoDreamDayDesigner()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X) but due to a limitation of PlantUML, the lifeline reaches the end of diagram.
-
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoDreamDayDesigner()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `dreamDayDesignerStateList.size() - 1`, pointing to the latest address book state, then there are no undone DreamDayDesigner states to restore. The `redo` command uses `Model#canRedoDreamDayDesigner()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitDreamDayDesigner()`, `Model#undoDreamDayDesigner()` or `Model#redoDreamDayDesigner()`. Thus, the `dreamDayDesignerStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitDreamDayDesigner()`. Since the `currentStatePointer` is not pointing at the end of the `dreamDayDesignerStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo executes:**
-
-* **Alternative 1 (current choice):** Saves the entire address book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command are correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_ -->
-
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Specific Guides**
 
 * [Documentation Guide](Documentation.md)
+* [Setting Up Guide](SettingUp.md)
 * [Testing Guide](Testing.md)
 * [Logging Guide](Logging.md)
 * [Configuration Guide](Configuration.md)
@@ -286,7 +189,7 @@ _{Explain here how the data archiving feature will be implemented}_ -->
 
 ## **Appendix: Requirements**
 
-### Product scope
+### Product Scope
 
 **Target user profile**:
 
@@ -298,45 +201,40 @@ Freelance wedding planners with many client and vendor contacts
 **Value proposition**: Provide a way to easily select suitable vendors for a wedding event given specific parameters such as budget, time, commission, client needs (e.g. culture, style), location.
 
 
-### User stories
+### User Stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
 | Priority | As a …​                            | I want to …​                                                | So that I can…​                                                                       |
-|----------|------------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| `***`    | forgetful user                     | see a list of all upcoming events                           | plan ahead and allocate my time effectively                                           |
-| `***`    | normal user                        | create a new event                                          | keep track of which vendors and clients are associated with an event                  |
-| `***`    | normal user                        | view all current events                                     | quickly see what events are coming up soon                                            |
-| `***`    | normal user                        | search for a specific vendor                                | quickly access vendor details without manually looking through the whole address book |
-| `***`    | normal user                        | tag vendors by categories                                   | quickly filter clients who require a specific service                                 |
-| `***`    | normal user                        | save my work at any time using a save button                | avoid losing important information when I take a break                                |
-| `***`    | user with erratic work schedule    | close the app and return later to continue where I left off | resume planning without disruption                                                    |
-| `***`    | user with many clients             | view all client details from a single dashboard             | get a quick summary of my clients' needs                                              |
-| `***`    | normal user                        | view contacts by their tags                                 | quickly access client or vendor details related to a particular category              |
-| `***`    | user with many vendors             | view all vendor details from a single dashboard             | have a comprehensive overview of all available services                               |
-| `**`     | seasoned user                      | use keyboard shortcuts                                      | work more quickly                                                                     |
-| `**`     | forgetful user                     | assign due dates for tasks related to an event              | manage timelines more effectively                                                     |
-| `**`     | meticulous user                    | add notes to each vendor                                    | track special considerations or preferences for future references                     |
-| `**`     | normal user                        | delete an existing event                                    | remove events when my clients cancel on me                                            |
-| `**`     | normal user                        | tag clients by event type or size                           | quickly filter clients who require similar services                                   |
-| `**`     | normal user                        | add new clients/vendors on the go                           | input information immediately after meeting them                                      |
-| `**`     | normal user                        | mark tasks as completed                                     | track progress of the event and ensure no missed steps                                |
-| `**`     | user with many clients             | edit existing client details                                | accommodate any changes to their event preferences                                    |
-| `**`     | user with many clients             | assign multiple clients to the same event type              | group similar wedding themes or sizes together                                        |
-| `**`     | user with many clients and vendors | add notes to each client                                    | remember specific requirements for their event                                        |
-| `**`     | user with many vendors             | edit existing vendor details                                | update contact information or service offerings as needed                             |
-| `**`     | user with many vendors             | assign multiple vendors to the same category                | compare and choose vendors more easily                                                |
-| `**`     | user with many vendors             | filter my vendors by availability                           | choose the ones who are available for the event date                                  |
-| `*`      | wannabe multitask user             | switch between different events quickly                     | easily manage multiple events at once                                                 |
-| `*`      | busy user                          | see an overview of my workload for the week/month           | better manage my time and commitments                                                 |
-| `*`      | normal user                        | update vendors of an existing event                         | change the vendors when there are changes in requirements or circumstances            |
-| `*`      | normal user                        | attach files (contracts, proposals) to vendors/clients      | have all necessary documents in one place                                             |
-| `*`      | normal user                        | customize how data is displayed (list view, card view)      | organize information in a way that suits my preferred workflow                        |
-| `*`      | user with many events              | archive old events                                          | keep my dashboard uncluttered with only active events displayed                       |
-| `*`      | user with many events              | quickly restore archived events                             | revisit previous event details if needed for reference                                |
-| `*`      | user with many vendors/client data | quickly access old data for vendors and clients             | avoid re-entering details when planning similar events                                |
+|-----|------------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| `***` | forgetful user                     | see a list of all upcoming events                           | plan ahead and allocate my time effectively                                           |
+| `***` | normal user                        | create a new event                                          | keep track of which vendors and clients are associated with an event                  |
+| `***` | normal user                        | view all current events                                     | quickly see what events are coming up soon                                            |
+| `***` | normal user                        | search for a specific vendor                                | quickly access vendor details without manually looking through the whole address book |
+| `***` | normal user                        | tag vendors by categories                                   | quickly filter clients who require a specific service                                 | |
+| `***` | user with erratic work schedule    | close the app and return later to continue where I left off | resume planning without disruption                                                    |
+| `***` | user with many clients             | view all clients                                            | get a quick summary of my clients' details                                            |
+| `***` | normal user                        | view contacts by their tags                                 | quickly access client or vendor details related to a particular category              |
+| `***` | user with many vendors             | view all vendor details from a single dashboard             | have a comprehensive overview of all available services                               |
+| `**` | forgetful user                     | assign dates for an event                                   | manage timelines more effectively                                                     |
+| `**` | meticulous user                    | add tags to each vendor                                     | track special considerations or preferences for future references                     |
+| `**` | user                        | delete an existing event                                    | remove events when my clients cancel on me                                            |
+| `**` | normal user                        | tag clients by event type or size                           | quickly filter clients who require similar services                                   |
+| `**` | normal user                        | add new clients/vendors on the go                           | input information immediately after meeting them                                      |
+| `**` | user with many clients             | assign multiple clients to the same event type              | group similar wedding themes or sizes together                                        |
+| `**` | user with many clients and vendors | add notes to each client                                    | remember specific requirements for their event                                        |
+| `**` | user with many vendors             | edit existing vendor details                                | update contact information or service offerings as needed                             |
+| `**` | user with many vendors             | assign multiple vendors to the same category                | compare and choose vendors more easily                                                |
+| `*` | busy user                          | see an overview of my workload for the week/month           | better manage my time and commitments                                                 |
+| `*` | normal user                        | update vendors of an existing event                         | change the vendors when there are changes in requirements or circumstances            |
+| `*` | normal user                        | attach files (contracts, proposals) to vendors/clients      | have all necessary documents in one place                                             |
+| `*` | normal user                        | customize how data is displayed (list view, card view)      | organize information in a way that suits my preferred workflow                        |
+| `*` | user with many events              | archive old events                                          | keep my dashboard uncluttered with only active events displayed                       |
+| `*` | user with many events              | quickly restore archived events                             | revisit previous event details if needed for reference                                |
+| `*` | user with many vendors/client data | quickly access old data for vendors and clients             | avoid re-entering details when planning similar events                                |
+| `*` | seasoned user                      | use keyboard shortcuts                                      | work more quickly                                                                     |
 
-### Use cases
+### Use Cases
 
 (For all use cases below, the **System** is `Dream Day Designer` and the **Actor** is the `Wedding planner`, unless specified otherwise)
 
@@ -349,6 +247,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 4. System validates the entered details (check for format, duplication, etc.).
 5. System creates the contact and assigns a unique ID to the contact.
 6. System displays a success message confirming the creation of the contact.
+
+    Use case ends.
 
 **Extensions:**
 
@@ -392,6 +292,13 @@ ___
   * 3a1. System displays an error message.
 
     Use case ends.
+  
+* 3b. System checks for association and find out this vendor/client is the last one related to a event.
+
+  * 3b1. System displays a message about the association.
+
+    Use case ends.
+
 
 
 **Guarantees**
@@ -426,6 +333,147 @@ ___
 
     Use case ends.
 
+**Name: UC04 - Add Event**
+
+**Preconditions:**
+1.  Have at least one valid Client and one valid Vendor saved in System
+
+**Main Success Scenario (MSS):**
+1. Wedding planner selects the option to create a new event.
+2. System requests for details of the event.
+3. Wedding planner enters the required details (related client, related vendor, etc.).
+4. System validates the entered details (check for the format, duplication, etc.).
+5. System creates the event and assigns a unique ID to the event.
+6. System displays a success message confirming the creation of the event.
+
+    Use case ends.
+
+**Extensions**
+
+* 3a. System detects an error in the entered data (e.g., invalid client ID).
+
+  * 3a1. System request the correct data.
+  * 3a2. Wedding planner enters the new data.
+
+    Use case resumes from step 4.
+  
+* 5a. The event already exists in the system (duplicate event).
+
+  * 5a1. System displays a message that the event already exists.
+    
+    Use case ends.
+
+**Name: UC05 - Delete Event**
+
+**Main Success Scenario (MSS):**
+1. Wedding planner requests to list all events.
+2. System displays a list of events.
+3. Wedding planner specifies which event he wished to delete.
+4. System displays a message for the successful deletion of the event.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The list is empty.
+
+    Use case ends.
+
+* 3a. System is unable to locate the event to be deleted.
+
+  * 3a1. System displays an error message.
+
+    Use case ends.
+
+**Guarantees:**
+1. The event is successfully deleted from the system, and any persistent storage.
+
+**Name: UC06 - List all Events**
+
+**Preconditions:**
+1. Events are saved properly.
+
+**Main Success Scenario (MSS):**
+1. User requests for previously saved events.
+2. System displays the saved events to the user.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. System is unable to get saved events.
+
+  * 2a1. System informs the user that the file is corrupted.
+  
+    Use case ends.
+
+* 2b. The list is empty.
+
+  * 2b1. System informs the user that there are no saved events.
+
+    Use case ends.
+
+**Guarantees:**
+1. The user’s previously saved events will be listed with their details.
+2. Events are sorted based on when it was added.
+
+**Name: UC07 - Edit contact**
+
+**Preconditions:**
+Have at least valid contact type (client/vendor) stored in the system.
+
+**Main Success Scenario (MSS):**
+1. Wedding planner requests to list all contacts.
+2. System displays a list of contacts.
+3. Wedding planner specifies which contact he wishes to edit and enters the respective details (name, phone number etc.) he requests to change.
+4. System validates the entered detail (check for format, duplication, etc.).
+5. System updates the contact with the new provided details.
+6. System displays a success message confirming the creation of the contact.
+
+    Use case ends.
+
+**Extensions**
+
+* 3a. System detects an error in the entered data (e.g. invalid phone number).
+
+  * 3a1. System requests the correct data.
+  * 3a2. Wedding planner enters new data.
+
+    Use case resumes from step 4.
+
+* 5a. The contact already exists in the system (duplicate contact).
+
+  * 5a1. System displays a message that the contact already exists.
+
+    Use case ends.
+
+**Guarantees:**
+1. The contact is successfully edited and the system and any persistent storage have updated this contact. Duplicate contact will not happen.
+
+**Name: UC08 - Help**
+
+**Main Success Scenario (MSS):**
+1. Wedding planners want to see product related material.
+2. System pops out a new window with the hyperlink to the product website.
+
+    Use case ends.
+
+**Name: UC09 - Clear**
+
+**Main Success Scenario (MSS):**
+1. Wedding planner decides to clear the database.
+2. System clear the whole database and update the local JSON file.
+
+    Use case ends.
+
+**Name: UC10 - Exit**
+
+**Main Success Scenario (MSS):**
+1. Wedding planner decides to exit the system.
+2. System saves the data to the local JSON file and terminates the program.
+
+    Use case ends.
+
 ### Non-Functional Requirements
 
 1. Compatibility: Should work on any mainstream OS (Windows/macOS/Linux) as long as Java `17` or above is installed.
@@ -437,7 +485,7 @@ ___
 
 --------------------------------------------------------------------------------------------------------------------
 
-## **Appendix: Instructions for manual testing**
+## **Appendix: Instructions for Manual Testing**
 
 Given below are instructions to test the app manually.
 
@@ -448,44 +496,147 @@ testers are expected to do more *exploratory* testing.
 
 </box>
 
-### Launch and shutdown
+### Launch and Shutdown
 
 1. Initial launch
 
-   1. Download the jar file and copy into an empty folder
+   1. Download the jar file `ddd.jar` and copy into an empty folder 
+   2. Open a terminal and navigate to the directory containing to the jar file.
+   3. Run `java -jar ddd.jar` in the terminal. <br>
+      Expected: Shows the GUI with a set of sample contacts. The window size may not be optimum.
 
-   1. Double-click the jar file Expected: Shows the GUI with a set of sample contacts. The window size may not be optimum.
-
-1. Saving window preferences
+2. Saving window preferences
 
    1. Resize the window to an optimum size. Move the window to a different location. Close the window.
-
-   1. Re-launch the app by double-clicking the jar file.<br>
+   2. Re-launch the app by running `java -jar ddd.jar` again.<br>
        Expected: The most recent window size and location is retained.
 
-1. _{ more test cases …​ }_
+### Adding a Contact
+1. Adding a client to the existing contact list.
+    1. Prerequisites: Address book is empty or does not contain `Contacts` that have the same `Name` or `Phone` as those used below.
+    2. Test case: `add -c n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 t/vegan t/urgent`<br>
+       Expected: Client will be added to the contact list. Details of the newly created client shown in the status message.
+    3. Test case: `add n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 t/vegan t/urgent`<br>
+       Expected: Add is unsuccessful since `-c` is not specified. Error details shown in the status message. Status bar remains the same.
+    4. Test case: `add -c n/Alice e/alice@gmail.com a/1 Clementi Street Blk 25 t/vegan t/urgent`<br>
+       Expected: Add is unsuccessful since `p/` is not specified. Error details shown in the status message. Status bar remains the same.
+       1. Similar commands to try: Missing `n/`, `e/` or `a/`. <br> Expected: Same as above. 
+    5. Test case: `add -c n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 t/vegan t/urgent` performed twice.<br>
+       Expected: Second add is unsuccessful due to duplicate name and phone. Error details shown in the status message. Status bar remains the same.
+    6. Test case: `add -c n/Alice (Yeo) p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 t/vegan t/urgent` <br>
+       Expected: Add is unsuccessful due to invalid `Name` input. Error details shown in the status message. Status bar remains the same.
+       1. Similar commands to try: Invalid inputs for `p/`, `e/`, `a/` or `t/`. <br> Expected: Same as above.
 
-### Deleting a person
 
-1. Deleting a person while all persons are being shown
+2. Adding a vendor to the existing contact list.
+    1. Prerequisites: Address book is empty or does not contain `Contacts` that have the same `Name` or `Phone` as those used below.
+    2. Test case: `add -v n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 s/Catering t/budget`<br>
+       Expected: Vendor will be added to the contact list. Details of the newly created vendor shown in the status message.
+    3. Test case: `add n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 s/Catering t/budget`<br>
+       Expected: Add is unsuccessful since `-v` is not specified. Error details shown in the status message. Status bar remains the same.
+    4. Test case: `add -v n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 t/budget`<br>
+       Expected: Add is unsuccessful since `p/` is not specified. Error details shown in the status message. Status bar remains the same.
+        1. Similar commands to try: Missing `n/`, `p/`, `e/` or `a/`. <br> Expected: Same as above.
+    5. Test case: `add -c n/Alice p/98765432 e/alice@gmail.com a/1 Clementi Street Blk 25 t/budget` followed by 
+       `add -v n/Alice p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 s/Catering t/budget`<br>
+        Expected: Second add is unsuccessful due to duplicate phone. Error details shown in the status message. Status bar remains the same.
+    6. Test case: `add -v n/Alice (Yeo) p/91234567 e/alice@gmail.com a/1 Clementi Street Blk 25 s/Catering t/budget` <br>
+       Expected: Add is unsuccessful due to invalid `Name` input. Error details shown in the status message. Status bar remains the same.
+        1. Similar commands to try: Invalid inputs for `p/`, `e/`, `a/`, `s/` or `t/`. <br> Expected: Same as above.
 
-   1. Prerequisites: List all persons using the `list` command. Multiple persons in the list.
+### Adding an Event
+1. Adding an event to the existing event list.
+    1. Prerequisites: Address book is empty or does not contain `Events` that have the same `Name` as those used below.
+    2. Test case: `add -e n/Sample Wedding des/Wedding reception d/2000-01-01 c/0 v/1`<br>
+       Expected: Event will be added to the event list. Details of the newly created event shown in the status message.
+    3. Test case: `add n/Sample Wedding des/Wedding reception d/2000-01-01 c/0 v/1`<br>
+       Expected: Add is unsuccessful since `-e` is not specified. Error details shown in the status message. Status bar remains the same.
+    4. Test case: `add -e n/Sample Wedding des/Wedding reception d/2000-01-01 v/1`<br>
+       Expected: Add is unsuccessful since `c/` is not specified. Error details shown in the status message. Status bar remains the same.
+        1. Similar commands to try: Missing `n/`, `des/`, `d/` or `v/`. <br> Expected: Same as above.
+    5. Test case: `add -e n/Sample Wedding des/Wedding reception d/2000-01-01 c/0 v/1` followed by
+       `add -e n/Sample Wedding des/Wedding reception 2 d/2000-02-01 c/1 v/2`<br>
+       Expected: Second add is unsuccessful due to duplicate name. Error details shown in the status message. Status bar remains the same.
+    6. Test case: `add -e n/Sample (Wedding) des/Wedding reception d/2000-01-01 c/0 v/1` <br>
+       Expected: Add is unsuccessful due to invalid `Name` input. Error details shown in the status message. Status bar remains the same.
+        1. Similar commands to try: Invalid inputs for `des/`, `d/`, `c/` or `v/`. <br> Expected: Same as above.
+    7. Test case: `add -e n/Sample (Wedding) des/Wedding reception d/2000-01-01 c/0 v/1` where there is no `Client` with `Id` 0.<br>
+       Expected: Add is unsuccessful due to invalid `Client` index. Error details shown in the status message. Status bar remains the same.
+        1. Similar commands to try: Invalid index for `v/`. <br> Expected: Same as above.
 
-   1. Test case: `delete 1`<br>
-      Expected: First contact is deleted from the list. Details of the deleted contact shown in the status message. 
+### Editing a Contact
+1. Editing an existing contact in the contact list
+    1. Prerequisites: Address book contains the `Contact` specified below.
+    2. Test case: `edit id/1 n/Bob`<br>
+       Expected: Contact will be edited accordingly. Details of the newly edited contact will be shown in the status message.
+    3. Test case: `edit 1 n/Bob` where there is at least 1 `Contact` displayed on the list. <br>
+     Expected: Contact will be edited accordingly. Details of the newly edited contact will be shown in the status message.
+    4. Test case: `edit n/Bob` <br>
+       Expected: Edit is unsuccessful as `Index` or `Id` is unspecified. Error details shown in the status message. Status bar remains the same.
+    5. Test case: `edit id/1 n/Bob` and there is another `Contact` with the same `Name` (Bob).<br>
+       Expected: Edit is unsuccessful due to duplicate `Name`. Error details shown in the status message. Status bar remains the same.
+       1. Similar commands to try: Duplicate `Phone`. <br> Expected: Same as above.
+    6. Test case: `edit id/1 n/(Bob)`<br>
+       Expected: Edit is unsuccessful due to invalid `Name` input. Error details shown in the status message. Status bar remains the same.
+       1. Similar commands to try: Invalid inputs for `id/`, `p/`, `e/`, `a/`, `s/` or `t/`. <br> Expected: Same as above.
+    7. Test case: `edit id/1 s/Catering` where `Id` 1 corresponds to a `Client`. <br>
+       Expected: Edit is unsuccessful since `Client` does not have a `Service`. Error details shown in the status message. Status bar remains the same.
+    8. Test case: `edit x ...` or `edit id/y ...` where x is larger than display size or non-positive, and y does not correspond to any `Contact` <br>
+       Expected: Edit is unsuccessful as `Index` or `Id` is invalid. Error details shown in the status message. Status bar remains the same.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. Error details shown in the status message. Status bar remains the same.
+### Listing
+1. Listing contacts
+    1. Prerequisites: Address book contains at least one `Client` and `Vendor`.
+    2. Test case: `list`<br>
+       Expected: All contacts will be displayed. The number of contacts displayed will be shown in the status message.
+    3. Test case: `list ...` where no flags or parameters like `n/` or `-c` are included in ... <br>
+       Expected: All contacts will be displayed since everything after `list` is ignored. The number of contacts displayed will be shown in the status message.
+    4. Test case: `list n/Bob Choo`<br>
+       Expected: All contacts that have `Name` matching any of `Bob` or `Choo` will be displayed. The number of contacts displayed will be shown in the status message.
+       1. Similar commands to try: `list` with `id/`, `n/`, `p/`, `e/`, `a/`, `t/`. <br> Expected: Same as above.
+    5. Test case: `list n/Bob Choo a/Blk 555`<br>
+       Expected: All contacts that have `Name` matching **any** of `Bob` or `Choo` **and** `Address` matching **any** of `Blk` or `555` will be displayed. The number of contacts displayed will be shown in the status message.
+       1. Similar commands to try: `list` with any combination of `id/`, `n/`, `p/`, `e/`, `a/`, `t/`. <br> Expected: Same as above.
+    6. Test case: `list -c -v -e` <br>
+       Expected: Displayed list is not updated. Error details shown in the status message. Status bar remains the same. 
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
+2. Listing clients
+    1. Prerequisites: Address book contains at least one `Client`.
+    2. Test case: `list -c`<br>
+       Expected: All clients will be displayed. The number of clients displayed will be shown in the status message.
+    3. Other test cases specified above for `list` are applicable for `list -c`. <br>
+       Expected: Only relevant clients will be displayed. The rest of the expected behaviour is the same as above.
+
+3. Listing vendors
+    1. Prerequisites: Address book contains at least one `Vendor`.
+    2. Test case: `list -v`<br>
+       Expected: All vendors will be displayed. The number of vendors displayed will be shown in the status message.
+    3. Other test cases specified above for `list` are applicable for `list -v`. The `s/` parameter can be used here. <br>
+       Expected: Only relevant vendors will be displayed. The rest of the expected behaviour is the same as above.
+
+4. Listing events
+    1. Prerequisites: Address book contains at least one `Event`.
+    2. Test case: `list -e`<br>
+       Expected: All events will be displayed. The number of events displayed will be shown in the status message.
+    3. Other test cases specified above for `list` are applicable for `list -e`, and the relevant parameters include `n/`, `des/`, `d/`, `id/`. <br>
+       Expected: Relevant events will be displayed. The rest of the expected behaviour is the same as above.
+
+### Deleting a Record
+
+1. Deleting a record (`Contact` or `Event`) while multiple records are displayed
+   1. Prerequisites: List contacts/events using the `list` command. Multiple records in the list.
+   2. Test case: `delete 1`<br>
+      Expected: First record is deleted from the list. Details of the deleted record shown in the status message.
+   3. Test case: `delete 0`<br>
+      Expected: No record is deleted. Error details shown in the status message. Status bar remains the same.
+   4. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size or non-positive)<br>
       Expected: Similar to previous.
 
-1. _{ more test cases …​ }_
+### Saving Data
 
-### Saving data
+1. Missing `ddd.json` file in the `data` folder
+   1. Expected: `ddd.json` will be created in the `data` folder and populated with some sample data.
 
-1. Dealing with missing/corrupted data files
-
-   1. _{explain how to simulate a missing/corrupted file, and the expected behavior}_
-
-1. _{ more test cases …​ }_
+2. Corrupted `ddd.json` file
+   1. Test case: Modify the json file such that the parser cannot read it properly. For example, have duplicate `Clients`
+   2. Expected: `ddd.json` will be cleared upon initialisation of the application, i.e. there is no data left in the address book
